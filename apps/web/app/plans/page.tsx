@@ -1,0 +1,1 @@
+export default function Page(){return <main className="main"><div className="eyebrow">plans</div><h1 className="title">Plans</h1><p className="muted">This module is wired into the platform architecture and ready for its next implementation slice.</p></main>}

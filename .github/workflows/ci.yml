@@ -1,0 +1,93 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_DB: bible_platform_test
+          POSTGRES_USER: bible
+          POSTGRES_PASSWORD: bible
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd="pg_isready -U bible -d bible_platform_test"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=20
+      redis:
+        image: redis:7-alpine
+        ports: ['6379:6379']
+        options: >-
+          --health-cmd="redis-cli ping"
+          --health-interval=5s
+          --health-timeout=3s
+          --health-retries=20
+    env:
+      DATABASE_URL: postgresql://bible:bible@127.0.0.1:5432/bible_platform_test
+      REDIS_URL: redis://127.0.0.1:6379
+      JWT_SECRET: ci-only-secret-change-me
+      REFRESH_TOKEN_SECRET: ci-only-refresh-secret-change-me
+      PORT: 4000
+      NODE_ENV: test
+      API_BASE_URL: http://127.0.0.1:4000/api/v1
+      NEXT_PUBLIC_API_URL: http://127.0.0.1:4000/api/v1
+      BIBLE_PROVIDER: mock
+      AI_MODEL: ci-test-model
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.15.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Repository verification
+        run: pnpm verify:repo || test $? -eq 2
+      - name: Apply all migrations to a clean database
+        run: bash ./scripts/migrate-test-db.sh
+      - name: Typecheck
+        run: pnpm typecheck
+      - name: Build
+        run: pnpm build
+      - name: API unit and security tests
+        run: pnpm --filter @bible-platform/api test
+      - name: Start API
+        run: pnpm --filter @bible-platform/api start > /tmp/bible-api.log 2>&1 &
+      - name: Wait for API
+        run: |
+          for i in {1..30}; do
+            if curl -fsS http://127.0.0.1:4000/api/v1/health/live >/dev/null; then exit 0; fi
+            sleep 2
+          done
+          cat /tmp/bible-api.log
+          exit 1
+      - name: Authorization integration smoke
+        run: pnpm test:integration
+      - name: Install Playwright Chromium
+        run: pnpm --filter @bible-platform/e2e exec playwright install --with-deps chromium
+      - name: Browser smoke tests
+        run: pnpm test:e2e
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: tests/e2e/playwright-report/
+          if-no-files-found: ignore
+      - name: Upload API log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: api-log
+          path: /tmp/bible-api.log
+          if-no-files-found: ignore

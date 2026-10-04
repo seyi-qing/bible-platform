@@ -1,0 +1,4 @@
+import { Link } from "expo-router";
+import { SafeAreaView, Text, View, Pressable, StyleSheet } from "react-native";
+export default function Home(){return <SafeAreaView style={s.root}><View><Text style={s.eyebrow}>READ · STUDY · PRAY</Text><Text style={s.title}>A Bible experience built for deeper study.</Text><Text style={s.body}>Your Bible, notes, highlights, plans and prayer life in one calm place.</Text><Link href="/bible" asChild><Pressable style={s.button}><Text style={s.buttonText}>Open Bible</Text></Pressable></Link></View></SafeAreaView>}
+const s=StyleSheet.create({root:{flex:1,backgroundColor:'#07111F',padding:28,justifyContent:'center'},eyebrow:{color:'#22D3EE',fontWeight:'800',letterSpacing:2},title:{color:'#FFF',fontSize:42,fontWeight:'800',marginTop:12},body:{color:'#A7B0BE',fontSize:17,lineHeight:26,marginTop:16},button:{backgroundColor:'#1677FF',padding:16,borderRadius:14,marginTop:28},buttonText:{color:'#FFF',textAlign:'center',fontWeight:'800'}})

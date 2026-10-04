@@ -1,0 +1,23 @@
+{
+  "name": "bible-platform",
+  "private": true,
+  "packageManager": "pnpm@10.15.0",
+  "scripts": {
+    "dev": "turbo dev",
+    "build": "turbo build",
+    "lint": "turbo lint",
+    "typecheck": "turbo typecheck",
+    "test": "turbo test",
+    "test:e2e": "pnpm --filter @bible-platform/e2e test",
+    "verify:repo": "bash ./scripts/verify-repository.sh",
+    "test:integration": "node ./tests/integration/authz-smoke.mjs && node ./tests/integration/unauthenticated-boundary.mjs && node ./tests/integration/failure-boundaries.mjs",
+    "verify:lockfile": "bash ./scripts/require-lockfile.sh",
+    "test:security": "node ./tests/integration/authorization-matrix.mjs && node ./tests/integration/sensitive-flow-boundaries.mjs",
+    "release:verify": "pnpm verify:lockfile && pnpm verify:repo && pnpm typecheck && pnpm build && pnpm test && pnpm test:integration && pnpm test:security && pnpm test:e2e"
+  },
+  "devDependencies": {
+    "turbo": "^2.5.6",
+    "typescript": "^5.9.2",
+    "prettier": "^3.6.2"
+  }
+}
